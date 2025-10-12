@@ -1,10 +1,20 @@
-// Analyzer: Summary
-// -----------------
-// Purpose: take a normalized test report and produce a concise, deterministic summary.
-// Important: No AI at this stage. Keep it rule-based or stubbed.
+import { NormalizedReport } from "../types/playwright";
 
-export function summarizeReport(normalized: unknown) {
-  // TODO: implement a simple, deterministic summary (counts, pass/fail, flaky hints).
-  // Return a typed object later.
-  return { total: 0, passed: 0, failed: 0, skipped: 0, notes: [] as string[] };
+export function summarizeReport(report: NormalizedReport) {
+  const notes: string[] = [];
+
+  if (report.failed > 0) {
+    const topFail = report.cases.find(c => c.status === "failed");
+    if (topFail?.errorMessage) notes.push(`Example failure: ${topFail.title} → ${topFail.errorMessage}`);
+  }
+  if (report.skipped > 0) notes.push(`Skipped: ${report.skipped}`);
+  if (report.passed === report.total) notes.push("All tests passed 🎉");
+
+  return {
+    total: report.total,
+    passed: report.passed,
+    failed: report.failed,
+    skipped: report.skipped,
+    notes
+  };
 }

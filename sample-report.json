@@ -1,0 +1,5 @@
+[
+  { "id": "t1", "title": "Login › shows title", "status": "passed", "durationMs": 820, "file": "tests/login.spec.ts", "project": "chromium" },
+  { "id": "t2", "title": "Login › invalid password", "status": "failed", "durationMs": 1200, "file": "tests/login.spec.ts", "project": "firefox", "errorMessage": "Expected 401" },
+  { "id": "t3", "title": "Dashboard › loads widgets", "status": "skipped", "file": "tests/dashboard.spec.ts", "project": "webkit" }
+]

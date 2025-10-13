@@ -1,4 +1,4 @@
-import { NormalizedReport } from "../types/playwright";
+import { NormalizedReport } from "../types/playwright.js";
 
 export function summarizeReport(report: NormalizedReport) {
   const notes: string[] = [];

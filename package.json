@@ -2,17 +2,23 @@
   "name": "taskmanagerplus-ai-analyzer",
   "version": "0.1.0",
   "private": true,
-  "description": "Skeleton for analyzing automated test reports (no AI yet).",
+  "description": "Analyzer for automated test reports with optional AI step.",
+  "type": "module",
   "scripts": {
-    "build": "tsc -p .",
-    "start": "node dist/main.js",
-    "dev": "ts-node src/main.ts",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "clean": "rimraf dist",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.vitest.json --noEmit",
+    "dev": "tsx src/main.ts sample-report.json",
+    "start": "node dist/main.js sample-report.json",
+    "test": "vitest --run -c vitest.config.ts",
+    "test:watch": "vitest -c vitest.config.ts",
+    "test:ai": "vitest --run tests/ai/aiAnalyzer.test.ts"
   },
   "devDependencies": {
-    "@types/node": "^22.18.10",
-    "ts-node": "^10.9.2",
+    "@types/node": "^22.0.0",
+    "rimraf": "^6.0.0",
+    "tsx": "^4.0.0",
     "typescript": "^5.6.3",
     "vitest": "^3.2.4"
   }

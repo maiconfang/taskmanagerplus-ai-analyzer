@@ -1,5 +1,5 @@
 import { promises as fs } from "node:fs";
-import { NormalizedReport, NormalizedTestCase } from "../types/playwright";
+import { NormalizedReport, NormalizedTestCase } from "../types/playwright.js";
 
 export async function readPlaywrightReport(inputPath: string): Promise<NormalizedReport> {
   const raw = await fs.readFile(inputPath, "utf-8");

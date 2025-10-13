@@ -1,10 +1,46 @@
 import { promises as fs } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { readPlaywrightReport } from "./readers/playwrightReader.js";
 import { summarizeReport } from "./analyzers/summaryAnalyzer.js";
 import { toMarkdown } from "./formatters/markdownFormatter.js";
 import { createAIAnalyzer } from "./analyzers/ai/index.js";
-import type { NormalizedReport } from "./types/analyzer.js"; // ✅ NEW
+import type { NormalizedReport } from "./types/analyzer.js";
+
+/**
+ * Build a NormalizedReport for the AI step from the Item 1 summary.
+ * This keeps main.ts independent from internal summary shapes.
+ */
+function toNormalizedReportFromSummary(summary: any): NormalizedReport {
+  return {
+    commit: summary.commit,
+    branch: summary.branch,
+    startedAt: summary.startedAt,
+    endedAt: summary.endedAt,
+    environment: summary.environment,
+
+    summary: {
+      total: summary.total ?? summary?.summary?.total ?? 0,
+      passed: summary.passed ?? summary?.summary?.passed ?? 0,
+      failed: summary.failed ?? summary?.summary?.failed ?? 0,
+      flaky: summary.flaky ?? summary?.summary?.flaky ?? 0,
+      skipped: summary.skipped ?? summary?.summary?.skipped ?? 0,
+    },
+
+    tests: Array.isArray(summary.tests)
+      ? summary.tests.map((t: any) => ({
+          id: t.id ?? t.title ?? "unknown-test",
+          title: t.title ?? t.id ?? "unknown-test",
+          status: t.status, // "passed" | "failed" | "flaky" | "skipped"
+          durationMs: t.durationMs ?? 0,
+          errorMessage: t.errorMessage,
+          retries: t.retries,
+          tags: t.tags,
+        }))
+      : [],
+  };
+}
 
 async function main() {
   const inputPath = process.argv[2];
@@ -28,41 +64,10 @@ async function main() {
   await fs.writeFile(resolve(outDir, "summary.json"), JSON.stringify(summary, null, 2), "utf-8");
   await fs.writeFile(resolve(outDir, "summary.md"), md, "utf-8");
 
-  // 5) Build a NormalizedReport for the AI step (adapter)
-  //    Your summary likely doesn't have 'flaky' or 'tests' — we default them.
-  const normalizedForAI: NormalizedReport = {
-    // Optional metadata: fill if you have them in your pipeline
-    commit: undefined,
-    branch: undefined,
-    startedAt: undefined,
-    endedAt: undefined,
-    environment: undefined,
-
-    summary: {
-      total: summary.total,
-      passed: summary.passed,
-      failed: summary.failed,
-      flaky: (summary as any).flaky ?? 0,     // default if not present
-      skipped: summary.skipped ?? 0,
-    },
-    // If your Item 1 already exposes tests in the summary, map them here.
-    // Otherwise, keep an empty array (AI mock still works).
-    tests: Array.isArray((summary as any).tests)
-      ? (summary as any).tests.map((t: any) => ({
-          id: t.id ?? t.title ?? "unknown-test",
-          title: t.title ?? t.id ?? "unknown-test",
-          status: t.status,            // "passed" | "failed" | "flaky" | "skipped"
-          durationMs: t.durationMs ?? 0,
-          errorMessage: t.errorMessage,
-          retries: t.retries,
-          tags: t.tags,
-        }))
-      : [],
-  };
-
-  // 6) Run AI Analyzer (never break Item 1)
+  // 5) Run AI Analyzer (Item 2). Never break Item 1 outputs.
   try {
-    const ai = createAIAnalyzer();
+    const ai = createAIAnalyzer(); // provider comes from env (AI_PROVIDER)
+    const normalizedForAI = toNormalizedReportFromSummary(summary);
     const aiResult = await ai.analyze(normalizedForAI);
 
     await fs.writeFile(
@@ -83,8 +88,12 @@ async function main() {
   }
 }
 
-// Run if executed directly
-if (require.main === module) {
+// ESM-safe: run only if executed directly
+const isMainModule =
+  process.argv[1] &&
+  fileURLToPath(import.meta.url) === resolve(process.argv[1] ?? "");
+
+if (isMainModule) {
   main().catch(err => {
     console.error("[taskmanagerplus-ai-analyzer] Fatal error:", err);
     process.exit(1);

@@ -16,9 +16,9 @@
     "test:ai": "vitest --run tests/ai/aiAnalyzer.test.ts"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "rimraf": "^6.0.0",
-    "tsx": "^4.0.0",
+    "@types/node": "^22.18.10",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.20.6",
     "typescript": "^5.6.3",
     "vitest": "^3.2.4"
   }

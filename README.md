@@ -88,12 +88,18 @@ taskmanagerplus-ai-analyzer/
   - Prompt construction and provider interaction.
   - Output generation into `out/ai-analysis.json`.
 
-### 🧠 Next Step (Upcoming Item 3)
+### ✅ 4. Latest Change — Consume **Real** Playwright Reports (Item 3 completed)
 
-- Implement real AI provider logic in `OpenAIProvider` to generate:
-  - **Root-cause analysis** (why tests failed).
-  - **Recommended next test cases**.
-- Merge these insights into the Markdown output automatically.
+- The reader (`src/readers/playwrightReader.ts`) now supports the **modern Playwright JSON** format:  
+  `suites → specs → tests → results` (while keeping backward compatibility with legacy array/top-level `tests`).  
+- Status mapping is deterministic: `timedOut` / `interrupted` are treated as `failed` to keep totals consistent.
+- Each test case is guaranteed to have a **stable string `id`** (prevents type issues downstream).
+- No changes were required to `summaryAnalyzer`, `markdownFormatter`, or the AI interfaces.
+
+**Result:** end-to-end run generates all three outputs successfully:
+- `out/summary.json`
+- `out/summary.md`
+- `out/ai-analysis.json`
 
 ---
 
@@ -119,6 +125,31 @@ taskmanagerplus-ai-analyzer/
    npm run build
    npm start -- ./path/to/playwright-report.json
    ```
+
+
+> Example below uses Windows PowerShell paths. Adjust the report path if needed.
+
+5) **Clean previous build (optional):**
+```powershell
+Remove-Item -Recurse -Force .\dist\ 2>$null
+```
+
+6) **Build TypeScript:**
+```powershell
+npm run build
+```
+
+7) **Run the analyzer with your real Playwright report:**
+```powershell
+node dist/main.js "C:\Desenvolvimento\workspace\taskmanagerplus-tests\ui-tests\reports\ui\playwright-report.json"
+```
+
+Outputs will be created in `out/`:
+- `out/summary.json`
+- `out/summary.md`
+- `out/ai-analysis.json`
+
+> Tip: you can add an npm script alias for a shorter command if you run this often.
 
 ---
 
@@ -192,3 +223,8 @@ It’s not only a tool to read and summarize test results —
 it’s a foundation for transforming raw test data into **actionable knowledge**, helping teams understand what is happening, why it happens, and how to improve.
 
 > 💡 “From deterministic reporting to intelligent quality insights — one step at a time.”
+
+
+
+
+

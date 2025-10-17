@@ -1,54 +1,84 @@
-// NOTE: This is a lightweight adapter skeleton. It does not import SDKs directly
-// to keep the project vendor-agnostic. You can plug your HTTP client of choice
-// here (e.g., fetch/axios) if desired.
-
-
+// src/analyzers/ai/providers/openai.ts
+import OpenAI from "openai";
 import { BaseLLMProvider } from "./base.js";
 import { LLMGenerateOptions } from "../ai.types.js";
 
-
-
+/**
+ * OpenAIProvider (class)
+ * ----------------------
+ * Fits your provider architecture (used via `new OpenAIProvider(apiKey, model)`).
+ * Returns JSON string via `generate(prompt)`.
+ */
 export class OpenAIProvider extends BaseLLMProvider {
-name = "openai" as const;
+  name = "openai" as const;
+  private client: OpenAI;
+  private model: string;
 
+  constructor(apiKey: string, model: string) {
+    super();
+    this.client = new OpenAI({ apiKey });
+    this.model = model || "gpt-4o-mini";
+  }
 
-constructor(
-private readonly apiKey: string,
-private readonly model: string,
-) { super(); }
+  async generate(prompt: string, _options?: LLMGenerateOptions): Promise<string> {
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a QA test-report analyst. Always return a valid JSON object (no markdown, no prose).",
+        },
+        { role: "user", content: prompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      max_tokens: 800,
+    });
 
-
-async generate(prompt: string, options?: LLMGenerateOptions): Promise<string> {
-if (!this.apiKey) throw new Error("OPENAI_API_KEY is required");
-
-
-// Minimal HTTP call sketch (pseudo-implementation):
-// Replace with your HTTP client.
-const body = {
-model: this.model,
-messages: [
-options?.system ? { role: "system", content: options.system } : undefined,
-{ role: "user", content: prompt }
-].filter(Boolean),
-temperature: options?.temperature ?? Number(process.env.OPENAI_TEMPERATURE ?? 0.2),
-max_tokens: options?.maxTokens ?? Number(process.env.OPENAI_MAX_TOKENS ?? 1200)
-};
-
-
-// const res = await fetch("https://api.openai.com/v1/chat/completions", {
-// method: "POST",
-// headers: {
-// "Content-Type": "application/json",
-// "Authorization": `Bearer ${this.apiKey}`
-// },
-// body: JSON.stringify(body)
-// });
-// const json = await res.json();
-// const text = json.choices?.[0]?.message?.content ?? "{}";
-// return text;
-
-
-// Placeholder to keep tests green without network:
-return JSON.stringify({ note: "OpenAI call would happen here." });
+    return response.choices?.[0]?.message?.content ?? "{}";
+  }
 }
+
+/**
+ * (Optional) Keep a function-style helper for direct calls elsewhere.
+ */
+type AiInput = { summary: any; model: string; apiKey: string; maxTokens?: number };
+export async function analyzeWithOpenAI({ summary, model, apiKey, maxTokens = 600 }: AiInput) {
+  const client = new OpenAI({ apiKey });
+  const prompt = [
+    "You are a QA test-report analyst. Read the JSON summary and produce insights & suggestions.",
+    "Return a strict JSON with keys: insights[], suggestions[], risks[], provider.",
+    "Focus on root causes, flaky patterns, coverage gaps, and high-value follow-ups.",
+    "",
+    "=== SUMMARY JSON ===",
+    JSON.stringify(summary).slice(0, 18000),
+  ].join("\n");
+
+  const resp = await client.chat.completions.create({
+    model,
+    messages: [
+      { role: "system", content: "You analyze automated test reports for QA teams." },
+      { role: "user", content: prompt },
+    ],
+    response_format: { type: "json_object" },
+    max_tokens: maxTokens,
+    temperature: 0.2,
+  });
+
+  const raw = resp.choices?.[0]?.message?.content || "{}";
+  let parsed: any;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = {};
+  }
+
+  return {
+    provider: "openai",
+    insights: parsed.insights ?? [],
+    suggestions: parsed.suggestions ?? [],
+    risks: parsed.risks ?? [],
+    raw,
+  };
 }

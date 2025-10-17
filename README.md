@@ -191,6 +191,55 @@ The project follows a **clean modular architecture**, where each part is indepen
 
 ---
 
+
+# 🧠 When AI Quota Is Exceeded (Fallback Mode)
+
+If your OpenAI quota is reached or the API returns a **429 / insufficient_quota** error,  
+the analyzer will automatically switch to a **deterministic fallback mode** — so your workflow never breaks.
+
+## How to Know This Happened
+
+- In PowerShell or terminal, you will see:
+  ```
+  [AI Analyzer] Skipped due to error: RateLimitError: 429 You exceeded your current quota...
+  ✅ Wrote:
+   - out/summary.json
+   - out/summary.md
+   - out/ai-analysis.json
+  ```
+- The file **`out/ai-analysis.json`** will clearly show a fallback hypothesis:
+  ```json
+  {
+    "rootCauses": [
+      {
+        "id": "fallback-xxxxx",
+        "description": "AI disabled or quota exceeded; no ML-based insights available",
+        ...
+      }
+    ],
+    "actions": [
+      {
+        "title": "Restore AI quota",
+        "description": "Fix quota/keys or set AI_PROVIDER=none to skip LLM temporarily"
+      }
+    ]
+  }
+  ```
+
+## What To Do Next
+
+- Verify your OpenAI billing or API key limits.
+- Once restored, simply re-run:
+  ```powershell
+  npm run analyze:real:openai
+  ```
+- The next execution will automatically switch back to **real AI analysis** (`source: "openai"`).
+
+> 💡 *Tip:* You can keep both results to compare:  
+> - `ai-analysis.json` with `"fallback"` IDs  
+> - The new one with `"openai"` IDs once your quota is restored.
+
+
 ### Why integrate AI?
 
 Artificial intelligence brings a new dimension to test result interpretation.  

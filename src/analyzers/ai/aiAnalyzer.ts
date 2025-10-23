@@ -24,7 +24,7 @@ function isQuotaOrRateLimitError(err: any): boolean {
   );
 }
 
-/** Robust JSON parsing with graceful fallback. */
+/** Robust JSON parsing with graceful fallback. Keeps fences like ```json out. */
 function parseAsJson<T>(text: string): T {
   const cleaned = String(text || "")
     .trim()
@@ -189,6 +189,19 @@ export class DefaultAIAnalyzer implements AIAnalyzer {
     const payload = JSON.stringify(input);
     const prompt = rootCausePrompt(payload);
 
+    // ===== Verbose diagnostics (non-breaking) =====
+    const enabled = process.env.AI_ENABLED === "true";
+    const providerName = process.env.AI_PROVIDER || "off";
+    const model = process.env.AI_MODEL || "gpt-4o-mini";
+    const budget = Number(process.env.AI_BUDGET_CENTS ?? "0");
+    const totals = input?.summary ?? { total: 0, passed: 0, failed: 0, flaky: 0, skipped: 0 };
+
+    console.log("[AI Analyzer] enabled=", enabled, "provider=", providerName, "model=", model, "budget=", budget);
+    console.log("[AI Analyzer] report totals:", totals);
+
+    // We DO NOT early-return here to avoid changing existing behavior.
+    // The try/catch below will keep the current fallback model intact.
+
     try {
       const raw = await this.provider.generate(prompt, {
         system: "You are a senior QA engineer specialized in root cause analysis.",
@@ -198,11 +211,17 @@ export class DefaultAIAnalyzer implements AIAnalyzer {
 
       // Sanitize AI JSON to match strict types
       const json = parseAsJson<Partial<AIAnalysisResult>>(raw);
-      return sanitizeAIResult(json);
+      const result = sanitizeAIResult(json);
+
+      console.log("[AI Analyzer] AI responded. rc=%d flaky=%d new=%d actions=%d",
+        result.rootCauses.length, result.flakyCandidates.length, result.newTestIdeas.length, result.actions.length);
+
+      return result;
     } catch (err: any) {
       const reason = isQuotaOrRateLimitError(err)
         ? "insufficient_quota_or_rate_limit"
         : `ai_error_${String(err?.code || "unknown")}`;
+      console.error("[AI Analyzer] Error caught, using deterministic fallback. reason=", reason, "message=", err?.message || String(err));
       // Never throw — always provide a valid deterministic result
       return buildDeterministicFallback(input, reason);
     }

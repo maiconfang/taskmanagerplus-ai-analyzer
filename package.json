@@ -17,7 +17,7 @@
     "analyze:real": "node dist/main.js \"C:\\\\Desenvolvimento\\\\workspace\\\\taskmanagerplus-tests\\\\ui-tests\\\\reports\\\\ui\\\\playwright-report.json\"",
     "analyze:real:free": "cross-env AI_PROVIDER=off AI_ENABLED=false AI_BUDGET_CENTS=0 npm run analyze:real",
     "analyze:real:mock": "cross-env AI_PROVIDER=mock AI_ENABLED=true AI_BUDGET_CENTS=0 npm run analyze:real",
-    "analyze:real:openai": "cross-env AI_PROVIDER=openai AI_ENABLED=true AI_BUDGET_CENTS=100 npm run analyze:real"
+    "analyze:real:openai": "cross-env AI_PROVIDER=openai AI_ENABLED=true AI_BUDGET_CENTS=500 npm run analyze:real"
   },
   "devDependencies": {
     "@types/node": "^22.18.10",

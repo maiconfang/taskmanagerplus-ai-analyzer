@@ -51,7 +51,10 @@ export class OpenAIProvider extends BaseLLMProvider {
           {
             role: "system",
             content:
-              "You are a QA test-report analyst. Always return a valid JSON object (no markdown, no prose).",
+              "You are a QA test-report analyst. Always return a valid JSON object (no markdown, no prose). " +
+              "The JSON MUST contain non-empty arrays for keys: rootCauses[], flakyCandidates[], newTestIdeas[], actions[]. " +
+              "If the test summary indicates zero failures, produce preventive insights, coverage gaps to explore, and high-value next steps instead of leaving arrays empty. " +
+              "Keep items concrete, technical, and actionable — avoid generic statements.",
           },
           { role: "user", content: prompt },
         ],

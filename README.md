@@ -273,7 +273,67 @@ it’s a foundation for transforming raw test data into **actionable knowledge**
 
 > 💡 “From deterministic reporting to intelligent quality insights — one step at a time.”
 
+## 🧠 AI Integration Overview (Latest Progress)
 
+The latest updates bring the **TaskManagerPlus AI Analyzer** to a new level of intelligent automation.  
+The integration with **OpenAI (GPT-4o-mini)** is now fully functional and enhanced with real-time logging, cost tracking, and preventive insight generation.
 
+### ✅ Key Achievements
+- **Real OpenAI Integration:**  
+  The analyzer now connects directly to OpenAI’s API using your project key (`sk-proj-...`), generating insights into `out/ai-analysis.json`.
 
+- **Detailed Token & Cost Logging:**  
+  Each execution logs the number of tokens used and an estimated USD cost:
+  ```
+  [OpenAI] Tokens used: total=257 (prompt=229, completion=28)
+  [OpenAI] Estimated cost: $0.000051 USD (gpt-4o-mini)
+  ```
+  This allows you to track your AI usage and spending easily.
 
+- **Preventive Insights When All Tests Pass:**  
+  Updated the system prompt to instruct the AI to produce **preventive actions, coverage ideas, and exploratory recommendations**  
+  even when the report has `failed = 0`.  
+  Example output now includes:
+  ```json
+  {
+    "newTestIdeas": [
+      { "title": "Expand Test Coverage for Edge Cases", "description": "..." },
+      { "title": "Performance Testing for Scalability", "description": "..." }
+    ],
+    "actions": [
+      { "title": "Review Test Suite for Completeness", "priority": "high" },
+      { "title": "Implement Continuous Integration for Automated Testing", "priority": "critical" }
+    ]
+  }
+  ```
+
+- **Stable and Transparent Flow:**  
+  Deterministic logic remains intact. If the AI key fails or quota is reached,  
+  the system gracefully falls back to deterministic analysis.
+
+- **Controlled Budgeting:**  
+  You can define your AI spending limit per execution with:
+  ```powershell
+  $env:AI_BUDGET_CENTS="500"   # $5.00 limit
+  ```
+
+### ⚙️ How to Run (with real AI)
+```powershell
+$env:OPENAI_API_KEY="sk-proj-..."
+$env:AI_PROVIDER="openai"
+$env:AI_MODEL="gpt-4o-mini"
+$env:AI_ENABLED="true"
+$env:AI_BUDGET_CENTS="500"
+node dist/main.js "C:\Desenvolvimento\workspace\taskmanagerplus-tests\ui-tests\reports\ui\playwright-report.json"
+```
+
+### 📄 Output Files
+- `out/summary.json` → deterministic summary  
+- `out/summary.md` → human-readable summary  
+- `out/ai-analysis.json` → real AI insights (root causes, flakiness, new ideas)
+
+### 🧩 Related Commits
+- `feat(openai): add token usage and cost logs for AI analysis runs`
+- `feat(ai): enable preventive insights when all tests pass`
+
+> 💡 The analyzer now transforms raw test data into **intelligent and cost-tracked insights**, even when all tests succeed — bridging the gap between QA reporting and AI-driven quality intelligence.
